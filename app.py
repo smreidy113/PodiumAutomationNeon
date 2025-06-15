@@ -11,7 +11,7 @@ types_subcats = df['type'].dropna().unique().tolist()
 care_level_subcats = df['care_level'].dropna().unique().tolist()
 category_hierarchy = {'Type': 'type', 'Care Level': 'care_level'}
 subcategories = {'type': types_subcats, 'care_level': care_level_subcats}
-filter_columns = ['sunlight', 'propagation']
+filter_columns = [('sunlight', 'multi'), ('propagation', 'multi'), ('hardiness', 'range')]
 
 subcategory_elements = pd.DataFrame()
 
@@ -29,13 +29,11 @@ def flattened_list_by_key(df, k):
 @app.route("/dbapi/filters/<string:category_value>/<string:subcategory_value>/")
 def filters(category_value, subcategory_value):
     subcategory_elements = df[df[category_value] == subcategory_value]
-    sunlight_values = flattened_list_by_key(subcategory_elements,'sunlight')
-    propagation_values = flattened_list_by_key(subcategory_elements,'propagation')
-    print(sunlight_values)
-    return jsonify({
-        "sunlight": {"type": "multi", "options": sunlight_values},
-        "propagation": {"type": "multi", "options": propagation_values}
-    })
+    filter_configs = {}
+    for filter in filter_columns:
+        filter_configs[filter[0]] = {"type": filter[1], "options": flattened_list_by_key(subcategory_elements,filter[0])}
+    print(filter_configs)
+    return jsonify(filter_configs)
 
 @app.route("/content/<string:category_value>/")
 def category_page(category_value):
@@ -55,21 +53,31 @@ def api_subcategory(category_value, subcategory_value):
     print(request)
     columns_to_send = ['common_name', 'type', 'care_level', 'indoor']
     subcategory_elements = df[df[category_value] == subcategory_value]
+    updated_options = {}
+    for filter in filter_columns:
+        updated_options[filter[0]] = flattened_list_by_key(subcategory_elements, filter[0])
     for column in filter_columns:
-        selected_values = request.args.getlist(column)
+        selected_values = request.args.getlist(column[0])
+        print("info about filter:")
+        print(column[0])
+        print(selected_values)
         if selected_values:
             subcategory_elements = subcategory_elements[
-                subcategory_elements[column].apply(
+                subcategory_elements[column[0]].apply(
                     lambda cell: any(val.lower() in [c.lower() for c in (cell or [])] for val in selected_values)
                 )
             ]
+        
+    for column in filter_columns:
+        selected_values = request.args.getlist(column[0])
+        if not selected_values:
+            updated_options[column[0]] = flattened_list_by_key(subcategory_elements, column[0])
+            
     print(subcategory_elements)
     print("I GOT HERE")
 
-    updated_options = {
-        'sunlight': flattened_list_by_key(subcategory_elements, 'sunlight'),
-        'propagation': flattened_list_by_key(subcategory_elements, 'propagation')
-    }
+    print("updated options: ")
+    print(updated_options)
 
     return jsonify({
         "results": subcategory_elements[columns_to_send].to_dict(orient='records'),
