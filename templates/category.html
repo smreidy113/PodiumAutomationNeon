@@ -1,0 +1,21 @@
+<div class="container">
+    <div class="module categories" id="category-1-module">
+    </div>
+</div>
+
+<script>
+    const pathParts = window.location.pathname.split("/");
+    const typeName = pathParts[pathParts.length - 2];
+
+    fetch(`/api/${typeName}`)
+        .then(res => res.json())
+        .then(data => {
+            const container = document.getElementById("category-1-module");
+            container.innerHTML += `<h2>Category - ${typeName}</h2>`;
+            data.forEach(elem => {
+                const el = document.createElement('div');
+                el.innerHTML = `<p><a href="/${typeName}/${elem}">${elem}</a></p>`;
+                container.appendChild(el);
+            });
+        });
+</script>
