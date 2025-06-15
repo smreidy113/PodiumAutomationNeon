@@ -1,15 +1,48 @@
-<div class="container">
-    <div class="module filter" id="filter-module">
-        <h2>Filter Module</h2>
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
 
-        <button id="apply-filters">Apply Filters</button>
-    </div>
-    <div class="module content" id="content-module">
-        <h2>Content Module</h2>
-    </div>
+<div class="module filter" id="filter-module">
+    <h2>Filter Module</h2>
+    <div id="filter-controls"></div>
+</div>
+<div class="module content" id="content-module">
+    <h2>Content Module</h2>
 </div>
 
+<button id="apply-filters" type="button">Apply Filters</button>
+
 <script>
+
+    function updateFilterOptions(filters) {
+        const container = document.getElementById("filter-controls");
+        container.innerHTML = "";  // Clear existing selects
+
+        Object.entries(filters).forEach(([field, options]) => {
+            const section = document.createElement("div");
+            section.classList.add("filter-section");
+
+            const label = document.createElement("label");
+            label.textContent = field.charAt(0).toUpperCase() + field.slice(1);
+            section.appendChild(label);
+            section.appendChild(document.createElement("br"));
+
+            const select = document.createElement("select");
+            select.setAttribute("multiple", true);
+            select.setAttribute("name", field);
+
+            options.forEach(val => {
+                const option = document.createElement("option");
+                option.value = val;
+                option.textContent = val;
+                select.appendChild(option);
+            });
+
+            section.appendChild(select);
+            container.appendChild(section);
+        });
+    }
+
     const pathParts = window.location.pathname.split("/");
     const category = pathParts[2];
     const subcategory = pathParts[3];
@@ -18,7 +51,7 @@
 
         .then(res => res.json())
         .then(filters => {
-            const container = document.getElementById("filter-module");
+            const container = document.getElementById("filter-controls");
 
             Object.entries(filters).forEach(([field, config]) => {
                 const section = document.createElement("div");
@@ -53,26 +86,29 @@
         });
 
     // Handle "Apply Filters" button click
-  document.getElementById("apply-filters").addEventListener("click", () => {
-    const params = new URLSearchParams();
+    document.getElementById("apply-filters").addEventListener("click", () => {
+        event.preventDefault();
+        const params = new URLSearchParams();
 
-    document.querySelectorAll("#filter-module select").forEach(select => {
-      const name = select.name;
-      const selected = Array.from(select.selectedOptions).map(opt => opt.value);
-      selected.forEach(val => params.append(name, val));
-    });
-
-    fetch(`/api/${category}/${subcategory}/filter-results?${params.toString()}`)
-        .then(res => res.json())
-        .then(data => {
-            const container = document.getElementById("content-module");
-            container.innerHTML = "";
-            container.innerHTML += `<h2>Category - ${category}, SubCategory - ${subcategory}</h2>`;
-            data.forEach(elem => {
-                const el = document.createElement('div');
-                el.innerHTML = `<p>${elem.common_name}</p>`;
-                container.appendChild(el);
-            });
+        document.querySelectorAll("#filter-module select").forEach(select => {
+            const name = select.name;
+            const selected = Array.from(select.selectedOptions).map(opt => opt.value);
+            selected.forEach(val => params.append(name, val));
         });
+
+        fetch(`/api/${category}/${subcategory}/filter-results?${params.toString()}`)
+            .then(res => res.json())
+            .then(data => {
+                const container = document.getElementById("content-module");
+                container.innerHTML = "";
+                container.innerHTML += `<h2>Category - ${category}, SubCategory - ${subcategory}</h2>`;
+                data.results.forEach(elem => {
+                    const el = document.createElement('div');
+                    el.innerHTML = `<p>${elem.common_name}</p>`;
+                    container.appendChild(el);
+                });
+                updateFilterOptions(data.available_filters);
+            });
+
     });
 </script>

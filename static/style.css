@@ -24,3 +24,28 @@ body {
 .right {
     background-color: #fce4ec;
 }
+
+#main-container {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  flex-wrap: nowrap; /* prevents wrapping */
+}
+
+
+/* Optional: make left module narrower */
+#filter-module {
+    flex: 0 0 300px;
+    /* fixed width */
+    max-width: 300px;
+    box-sizing: border-box;
+}
+
+#content-module {
+    flex: 1;
+    /* take up remaining space */
+    min-width: 0;
+    /* prevents overflow */
+    box-sizing: border-box;
+
+}

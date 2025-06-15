@@ -65,7 +65,16 @@ def api_subcategory(category_value, subcategory_value):
             ]
     print(subcategory_elements)
     print("I GOT HERE")
-    return jsonify(subcategory_elements[columns_to_send].to_dict(orient='records'))
+
+    updated_options = {
+        'sunlight': flattened_list_by_key(subcategory_elements, 'sunlight'),
+        'propagation': flattened_list_by_key(subcategory_elements, 'propagation')
+    }
+
+    return jsonify({
+        "results": subcategory_elements[columns_to_send].to_dict(orient='records'),
+        "available_filters": updated_options
+    })
 
 @app.route("/api/getcategories")
 def api_getcategories():
