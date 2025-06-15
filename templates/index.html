@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Home</title>
+</head>
+
+<div class="container">
+    <div class="module categories" id="category-1-module">
+        <h2>Category 1 Module</h2>
+    </div>
+</div>
+
+<script>
+    fetch('/getcategories')
+        .then(res => res.json())
+        .then(data => {
+            const container = document.getElementById('category-1-module');
+            data.forEach(plant => {
+                const el = document.createElement('div');
+                el.innerHTML = `<h3>${plant}</h3>`;
+                container.appendChild(el);
+            });
+        });
+</script>
