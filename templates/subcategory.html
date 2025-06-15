@@ -1,6 +1,8 @@
 <div class="container">
     <div class="module filter" id="filter-module">
         <h2>Filter Module</h2>
+
+        <button id="apply-filters">Apply Filters</button>
     </div>
     <div class="module content" id="content-module">
         <h2>Content Module</h2>
@@ -12,16 +14,59 @@
     const category = pathParts[2];
     const subcategory = pathParts[3];
 
-    fetch('/dbapi/filters')
+    fetch(`/dbapi/filters/${category}/${subcategory}/`)
+
         .then(res => res.json())
-        .then(data => {
-            document.getElementById("filter-module").innerHTML += `<p>${data.content}</p>`;
+        .then(filters => {
+            const container = document.getElementById("filter-module");
+
+            Object.entries(filters).forEach(([field, config]) => {
+                const section = document.createElement("div");
+                section.classList.add("filter-section");
+
+                // Label
+                const label = document.createElement("label");
+                label.textContent = field.charAt(0).toUpperCase() + field.slice(1);
+                section.appendChild(label);
+                section.appendChild(document.createElement("br"));
+
+                // MULTI-SELECT
+                if (config.type === "multi") {
+                    const select = document.createElement("select");
+                    select.setAttribute("multiple", true);
+                    select.setAttribute("name", field);
+
+                    config.options.forEach(optionVal => {
+                        const option = document.createElement("option");
+                        option.value = optionVal;
+                        option.textContent = optionVal;
+                        select.appendChild(option);
+                    });
+
+                    section.appendChild(select);
+                }
+
+                // FUTURE: Add 'range' type or others here
+
+                container.appendChild(section);
+            });
         });
 
-    fetch(`/api/${category}/${subcategory}/`)
+    // Handle "Apply Filters" button click
+  document.getElementById("apply-filters").addEventListener("click", () => {
+    const params = new URLSearchParams();
+
+    document.querySelectorAll("#filter-module select").forEach(select => {
+      const name = select.name;
+      const selected = Array.from(select.selectedOptions).map(opt => opt.value);
+      selected.forEach(val => params.append(name, val));
+    });
+
+    fetch(`/api/${category}/${subcategory}/filter-results?${params.toString()}`)
         .then(res => res.json())
         .then(data => {
             const container = document.getElementById("content-module");
+            container.innerHTML = "";
             container.innerHTML += `<h2>Category - ${category}, SubCategory - ${subcategory}</h2>`;
             data.forEach(elem => {
                 const el = document.createElement('div');
@@ -29,4 +74,5 @@
                 container.appendChild(el);
             });
         });
+    });
 </script>
