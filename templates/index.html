@@ -17,7 +17,7 @@
             const container = document.getElementById("category-1-module");
             Object.entries(data).forEach(([cat_name, value]) => {
                 container.innerHTML += `<h2>Category - ${cat_name}</h2>`;
-                container.innerHTML += `<p><a href="/${value}/">Click here to see all subcategories for ${cat_name}</a></p>`;
+                container.innerHTML += `<p><a href="/content/${value}/">Click here to see all subcategories for ${cat_name}</a></p>`;
             });
         });
 </script>

@@ -14,7 +14,7 @@
             container.innerHTML += `<h2>Category - ${typeName}</h2>`;
             data.forEach(elem => {
                 const el = document.createElement('div');
-                el.innerHTML = `<p><a href="/${typeName}/${elem}">${elem}</a></p>`;
+                el.innerHTML = `<p><a href="/content/${typeName}/${elem}">${elem}</a></p>`;
                 container.appendChild(el);
             });
         });

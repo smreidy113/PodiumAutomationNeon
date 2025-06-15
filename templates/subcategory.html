@@ -1,0 +1,32 @@
+<div class="container">
+    <div class="module filter" id="filter-module">
+        <h2>Filter Module</h2>
+    </div>
+    <div class="module content" id="content-module">
+        <h2>Content Module</h2>
+    </div>
+</div>
+
+<script>
+    const pathParts = window.location.pathname.split("/");
+    const category = pathParts[2];
+    const subcategory = pathParts[3];
+
+    fetch('/dbapi/filters')
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById("filter-module").innerHTML += `<p>${data.content}</p>`;
+        });
+
+    fetch(`/api/${category}/${subcategory}/`)
+        .then(res => res.json())
+        .then(data => {
+            const container = document.getElementById("content-module");
+            container.innerHTML += `<h2>Category - ${category}, SubCategory - ${subcategory}</h2>`;
+            data.forEach(elem => {
+                const el = document.createElement('div');
+                el.innerHTML = `<p>${elem.common_name}</p>`;
+                container.appendChild(el);
+            });
+        });
+</script>

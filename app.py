@@ -17,7 +17,11 @@ subcategories = {'type': types_subcats, 'care_level': care_level_subcats}
 def dashboard():
     return render_template("dashboard.html")
 
-@app.route("/<string:category_value>/")
+@app.route("/dbapi/filters/")
+def filters(category_value):
+    return {'test'}
+
+@app.route("/content/<string:category_value>/")
 def category_page(category_value):
     return render_template("category.html")
 
@@ -25,9 +29,17 @@ def category_page(category_value):
 def api_category(category_value):
     return jsonify(subcategories[category_value])
 
-@app.route("/<string:category_name>/<string:subcat>")
-def api_subcategories(category, subcat):
-    return {"content": "You selected the " + category + " and the " + subcat + " sub-category."}
+
+@app.route("/content/<string:category_value>/<string:subcategory_value>/")
+def subcategory_page(category_value, subcategory_value):
+    return render_template("subcategory.html")
+
+@app.route("/api/<string:category_value>/<string:subcategory_value>/")
+def api_subcategory(category_value, subcategory_value):
+    columns_to_send = ['common_name', 'type', 'care_level', 'indoor']
+    filtered = df[df[category_value] == subcategory_value][columns_to_send]
+    print(filtered)
+    return jsonify(filtered.to_dict(orient='records'))
 
 @app.route("/api/getcategories")
 def api_getcategories():
