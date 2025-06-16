@@ -2,12 +2,14 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
-<div class="module filter" id="filter-module">
-    <h2>Filter Module</h2>
-    <div id="filter-controls"></div>
-</div>
-<div class="module content" id="content-module">
-    <h2>Content Module</h2>
+<div id="main-container">
+    <div id="filter-module">
+        <h2>Filter Module</h2>
+        <div id="filter-controls"></div>
+    </div>
+    <div class="module content" id="content-module">
+        <h2>Content Module</h2>
+    </div>
 </div>
 
 <button id="apply-filters" type="button">Apply Filters</button>
@@ -41,6 +43,24 @@
             section.appendChild(select);
             container.appendChild(section);
         });
+    }
+
+    function renderContentModule({ category, subcategory, data }) {
+        const container = document.getElementById("content-module");
+        container.innerHTML = "";
+
+        const heading = document.createElement("h2");
+        heading.textContent = `Category - ${category}, SubCategory - ${subcategory}`;
+        container.appendChild(heading);
+
+        data.results.forEach(elem => {
+            const el = document.createElement("div");
+            el.innerHTML = `<p>${elem.common_name} (Scientific name: ${elem.scientific_name})</p>`;
+            container.appendChild(el);
+        });
+
+        // Update filters after content is rendered
+        updateFilterOptions(data.available_filters);
     }
 
     const pathParts = window.location.pathname.split("/");
@@ -85,6 +105,19 @@
             });
         });
 
+    // Display all, unfiltered results first
+    fetch(`/api/${category}/${subcategory}/filter-results`)
+        .then(res => res.json())
+        .then(data => {
+            renderContentModule({
+                category: category,
+                subcategory: subcategory,
+                data: data
+            });
+
+        });
+
+
     // Handle "Apply Filters" button click
     document.getElementById("apply-filters").addEventListener("click", () => {
         event.preventDefault();
@@ -99,15 +132,11 @@
         fetch(`/api/${category}/${subcategory}/filter-results?${params.toString()}`)
             .then(res => res.json())
             .then(data => {
-                const container = document.getElementById("content-module");
-                container.innerHTML = "";
-                container.innerHTML += `<h2>Category - ${category}, SubCategory - ${subcategory}</h2>`;
-                data.results.forEach(elem => {
-                    const el = document.createElement('div');
-                    el.innerHTML = `<p>${elem.common_name}</p>`;
-                    container.appendChild(el);
+                renderContentModule({
+                    category: "All",
+                    subcategory: "None",
+                    data: data
                 });
-                updateFilterOptions(data.available_filters);
             });
 
     });
