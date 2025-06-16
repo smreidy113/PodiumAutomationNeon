@@ -1,9 +1,6 @@
 from flask import Flask, render_template, jsonify, request
 import pandas as pd
 
-
-#import requests  # Or internal function calls
-
 app = Flask(__name__)
 
 # Pre-load the plant data. This works when there are a small number of entries.  TODO: add an abstraction layer for accessing data so 
@@ -18,6 +15,9 @@ subcategories = {'type': types_subcats, 'care_level': care_level_subcats}
 
 # Add a filter, including the type of filter. Right now 'multi' and 'range' are supported. If you want to add another one, 
 filter_columns = [('sunlight', 'multi'), ('propagation', 'multi'), ('hardiness', 'range')]
+
+# Columns that can be displayed to the front-end, to limit the amount of data sent.
+columns_to_send = ['common_name', 'type', 'care_level', 'indoor', 'scientific_name']
 
 @app.route("/dashboard")
 def dashboard():
@@ -42,6 +42,7 @@ def generate_even_ranges(min_val, max_val, segments):
     return ranges
 
 # Based on the format of the data, provide a strategy for how to define and display the options.
+# TODO: Add these as lambdas to the `filter_columns` constant so the info is all in one place.
 def get_flattened_options_by_column_and_mode(df, k, mode):
     if mode == 'multi':
         return sorted({
@@ -81,22 +82,26 @@ def subcategory_page(category_value, subcategory_value):
 
 def transform_selected_values(selected_values):
     ret = [tuple(map(int, selected_range_str.split(','))) for selected_range_str in selected_values]
-    print(ret)
     return ret
 
+
 @app.route("/api/<string:category_value>/<string:subcategory_value>/filter-results")
-def api_subcategory(category_value, subcategory_value):
-    print(request)
-    columns_to_send = ['common_name', 'type', 'care_level', 'indoor', 'scientific_name']
+def display_by_subcategory_and_filter(category_value, subcategory_value):
+    app.logger.debug("Filtering based on request " + str(request) + ".")
     subcategory_elements = df[df[category_value] == subcategory_value]
     updated_options = {}
+
+    # Pre-load options as-is to preserve options. We may eliminate some down the road if some filters eliminate enough entries.
     for filter in filter_columns:
         updated_options[filter[0]] = get_flattened_options_by_column_and_mode(subcategory_elements, filter[0], filter[1])
+
     for column in filter_columns:
         selected_values = request.args.getlist(column[0])
         
         if selected_values:
-            print("Filtering " + str(column[0]) + " based on " + str(selected_values) + ".")
+            app.logger.debug("Filtering " + str(column[0]) + " based on " + str(selected_values) + ".")
+
+            # Apply filter based on filter type. TODO: Add these as a lambda to the `filter_columns` constant.
             if column[1] == 'multi': 
                 subcategory_elements = subcategory_elements[
                     subcategory_elements[column[0]].apply(
@@ -112,7 +117,7 @@ def api_subcategory(category_value, subcategory_value):
                             int(cell['min']) <= x[0] and int(cell['max']) >= x[1] for x in transform_selected_values(selected_values))
                     )]
         else:
-            print("No filter on " + str(column[0]) + ".")
+            app.logger.debug("No filter on " + str(column[0]) + ".")
         
     # We don't want to remove other options from filters the user has selected. That will force them to refresh the page in order to remove filters.
     for column in filter_columns:
